@@ -5,13 +5,26 @@ Forward input to a telegram chat
 ## Install
 
 ```
-go install github.com/igolaizola/tgio/cmd/tgio@latest
+go get github.com/igolaizola/tgio/cmd/tgio
 ```
 
 ## Example
 
 ```
-ping google.com | tgio --token <my-bot-token> -chat <my-chat-id>
+echo hello | tgio --token <my-bot-token> -chat <my-chat-id>
+```
+
+Or using a config file
+
+```
+echo hello | tgio --config tgio.conf
+```
+
+where `tgio.conf` content is:
+
+```
+token <my-bot-token>
+chat <my-chat-id>
 ```
 
 ## How to get token and chat parameters
@@ -26,5 +39,5 @@ import "github.com/igolaizola/tgio"
 
 ...
 
-err := tgio.Forward(reader, token, chat)
+err := tgio.Forward(ctx, reader, token, chat)
 ```

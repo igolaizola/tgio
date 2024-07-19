@@ -1,0 +1,14 @@
+builds:
+  - id: tgio
+    binary: tgio
+    main: ./cmd/tgio
+    goarch:
+      - amd64
+      - arm64
+      - arm
+archives:
+  - id: tgio
+    builds:
+      - tgio
+    format: zip
+    name_template: 'tgio_{{ .Version }}_{{- if eq .Os "darwin" }}macos{{- else }}{{ .Os }}{{ end }}_{{ .Arch }}'

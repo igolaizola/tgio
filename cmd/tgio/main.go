@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strings"
 
 	"github.com/igolaizola/tgio"
@@ -14,29 +16,24 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 
+// Build flags
+var version = ""
+var commit = ""
+var date = ""
+
 func main() {
 	// Create signal based context
-	ctx, cancel := context.WithCancel(context.Background())
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
-	go func() {
-		select {
-		case <-c:
-			cancel()
-		case <-ctx.Done():
-			cancel()
-		}
-		signal.Stop(c)
-	}()
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
 
 	// Launch command
-	cmd := newForwardCommand()
+	cmd := newCommand()
 	if err := cmd.ParseAndRun(ctx, os.Args[1:]); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func newForwardCommand() *ffcli.Command {
+func newCommand() *ffcli.Command {
 	fs := flag.NewFlagSet("tgio", flag.ExitOnError)
 	_ = fs.String("config", "", "config file (optional)")
 
@@ -64,6 +61,37 @@ func newForwardCommand() *ffcli.Command {
 				return errors.New("missing chat id")
 			}
 			return tgio.Forward(ctx, os.Stdin, *token, *chat, includes, excludes)
+		},
+		Subcommands: []*ffcli.Command{
+			newVersionCommand(),
+		},
+	}
+}
+
+func newVersionCommand() *ffcli.Command {
+	return &ffcli.Command{
+		Name:       "version",
+		ShortUsage: "goobar version",
+		ShortHelp:  "print version",
+		Exec: func(ctx context.Context, args []string) error {
+			v := version
+			if v == "" {
+				if buildInfo, ok := debug.ReadBuildInfo(); ok {
+					v = buildInfo.Main.Version
+				}
+			}
+			if v == "" {
+				v = "dev"
+			}
+			versionFields := []string{v}
+			if commit != "" {
+				versionFields = append(versionFields, commit)
+			}
+			if date != "" {
+				versionFields = append(versionFields, date)
+			}
+			fmt.Println(strings.Join(versionFields, " "))
+			return nil
 		},
 	}
 }

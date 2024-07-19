@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/igolaizola/tgio"
 	"github.com/peterbourgon/ff/v3"
@@ -41,6 +42,9 @@ func newForwardCommand() *ffcli.Command {
 
 	token := fs.String("token", "", "telegram bot token")
 	chat := fs.Int("chat", 0, "telegram chat id")
+	var includes, excludes []string
+	fs.Var(fsStrings(&includes), "include", "include only messages that match this")
+	fs.Var(fsStrings(&excludes), "exclude", "exclude messages that match this")
 
 	return &ffcli.Command{
 		Name:       "tgio",
@@ -59,7 +63,22 @@ func newForwardCommand() *ffcli.Command {
 			if *chat == 0 {
 				return errors.New("missing chat id")
 			}
-			return tgio.Forward(ctx, os.Stdin, *token, *chat)
+			return tgio.Forward(ctx, os.Stdin, *token, *chat, includes, excludes)
 		},
 	}
+}
+
+type stringsValue []string
+
+func (f *stringsValue) String() string {
+	return strings.Join(*f, ", ")
+}
+
+func (f *stringsValue) Set(value string) error {
+	*f = append(*f, value)
+	return nil
+}
+
+func fsStrings(p *[]string) *stringsValue {
+	return (*stringsValue)(p)
 }

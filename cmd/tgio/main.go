@@ -39,6 +39,7 @@ func newCommand() *ffcli.Command {
 
 	token := fs.String("token", "", "telegram bot token")
 	chat := fs.Int("chat", 0, "telegram chat id")
+	topic := fs.Int("topic", 0, "telegram group topic id")
 	var includes, excludes []string
 	fs.Var(fsStrings(&includes), "include", "include only messages that match this")
 	fs.Var(fsStrings(&excludes), "exclude", "exclude messages that match this")
@@ -60,7 +61,10 @@ func newCommand() *ffcli.Command {
 			if *chat == 0 {
 				return errors.New("missing chat id")
 			}
-			return tgio.Forward(ctx, os.Stdin, *token, *chat, includes, excludes)
+			if *topic < 0 {
+				return errors.New("topic id must be non-negative")
+			}
+			return tgio.ForwardToTopic(ctx, os.Stdin, *token, *chat, *topic, includes, excludes)
 		},
 		Subcommands: []*ffcli.Command{
 			newVersionCommand(),
